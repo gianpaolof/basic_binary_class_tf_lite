@@ -11,6 +11,9 @@ Running the neural network model, I can plot the decision boundary:
 ![immagine](https://github.com/gianpaolof/basic_binary_class_tf_lite/assets/6586650/9c897ea4-51b8-42fe-9d1e-456edd56f961)
 
 I think the model did a decent job in finding a pattern (as far as I know given my ultra-basic knowledge in this field)
+in the decision boundary plot indeed, it is possible to see that the probability of having the switch set to on increases toward
+the points where the dataset shows the green circle (in the boundary plot the circle is now orange). On the ight there is the legend
+explaining the values of the contour plot
 
 When running the app, the user can input hour/day and get class 0 or class 1 (meaning probability 0 or 1 to find the switch on/off in thet time)
 
