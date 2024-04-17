@@ -16,7 +16,7 @@ When running the app, the user can input hour/day and get class 0 or class 1 (me
 
 the model:
 
-
+```python
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
@@ -115,5 +115,71 @@ interpreter = tf.lite.Interpreter(model_path="model.tflite")
 interpreter.allocate_tensors()
 
 
+# Your sample data
+hour = 22 
+day = 7
+
+# Create NumPy array with correct shape and data type
+mysample = np.array([hour, day], dtype=np.int32).reshape(1, 2) 
+
+# Set the input tensor
+interpreter.set_tensor(input_details[0]['index'], mysample)
+
+interpreter.invoke()
+tflite_predictions = interpreter.get_tensor(output_details[0]['index'])
+
+prediction = model.predict(mysample)
+
+print(tflite_predictions)
+print(prediction)
+
+
+#decision boundary
+# define bounds of the domain
+
+# define bounds of the domain
+min1, max1 = X_train.iloc[:, 0].min()-1, X_train.iloc[:, 0].max()+1
+min2, max2 = X_train.iloc[:, 1].min()-1, X_train.iloc[:, 1].max()+1
+
+print(min1, max1)
+print(min2, max2)
+
+# define the x and y scale
+x1grid = np.arange(min1, max1, 0.1)
+x2grid = np.arange(min2, max2, 0.1)
+
+# create all of the lines and rows of the grid
+xx, yy = np.meshgrid(x1grid, x2grid)
+
+# flatten each grid to a vector
+r1, r2 = xx.flatten(), yy.flatten()
+r1, r2 = r1.reshape((len(r1), 1)), r2.reshape((len(r2), 1))
+
+
+# horizontal stack vectors to create x1,x2 input for the model
+grid = np.hstack((r1,r2))
+
+# make predictions for the grid
+yhat = model.predict(grid)
+
+# reshape the predictions back into a grid
+zz = yhat.reshape(xx.shape)
+
+
+
+c = plt.contourf(xx, yy, zz, cmap='RdBu')
+# add a legend, called a color bar
+plt.colorbar(c)
+
+cmap = plt.cm.get_cmap('tab10') 
+for class_value in range(2):
+    row_ix = np.where(y == class_value)[0]  # Get array of indices
+    for index in row_ix:  
+        age = X.iloc[index, 0]  # Access 'age' using index
+        income = X.iloc[index, 1]  # Access 'income' using index
+        color = cmap(class_value) 
+        plt.scatter(age, income, c=color) 
+
+```
 
 
