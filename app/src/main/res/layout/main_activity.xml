@@ -43,4 +43,10 @@
         android:layout_width="match_parent"
         android:layout_height="60dp"
         android:text="TextView" />
+
+    <Button
+        android:id="@+id/trainbutton"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:text="Train" />
 </LinearLayout>
