@@ -49,4 +49,42 @@
         android:layout_width="match_parent"
         android:layout_height="60dp"
         android:text="Train" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="60dp"/>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="60dp">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/edittext3"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:hint="an hour" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="60dp">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/edittext4"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:hint="a day" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+    <Button
+        android:id="@+id/predictbutton"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:text="predict" />
+
+    <TextView
+        android:id="@+id/resultView"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:text="result" />
 </LinearLayout>

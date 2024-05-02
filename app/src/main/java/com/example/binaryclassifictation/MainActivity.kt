@@ -1,6 +1,5 @@
 package com.example.binaryclassifictation
 
-import android.app.Activity
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
@@ -10,7 +9,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.tensorflow.lite.Interpreter
-
 import java.io.FileInputStream
 import java.io.IOException
 import java.nio.ByteBuffer
@@ -32,6 +30,8 @@ class MainActivity : AppCompatActivity() {
     val trainLabelBatches = mutableListOf<FloatBuffer>()
     private lateinit var binding: MainActivityBinding
     private var tflite: Interpreter? = null
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -58,6 +58,15 @@ class MainActivity : AppCompatActivity() {
                 train()
             }
 
+        }
+
+        binding.predictbutton.setOnClickListener{
+            // Run inference using a coroutine
+            val hr = binding.edittext3.text.toString().toInt()
+            val day = binding.edittext4.text.toString().toInt()
+            lifecycleScope.launch {
+                predict(hr, day)
+            }
         }
         buildTrainData()
     }
@@ -89,6 +98,30 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+
+    private suspend fun predict(hr: Int, day: Int) {
+        val trainFeatures = ByteBuffer.allocateDirect(NUM_FEATURES * 4).order(ByteOrder.nativeOrder()).asFloatBuffer()
+
+        val hrValue = hr.toFloat()
+        val dayValue = day.toFloat()
+
+        trainFeatures.put(hrValue)
+        trainFeatures.put(dayValue)
+        val inputs: MutableMap<String, Any> = HashMap()
+        inputs["inputs"] = trainFeatures
+        val outputs: MutableMap<String, Any> = HashMap()
+        val pred = FloatBuffer.allocate(1)
+        outputs["logits"] = pred
+
+        tflite?.runSignature(inputs, outputs, "infer")
+
+        withContext(Dispatchers.Default) {
+            binding.resultView.text = pred[0].toString()
+            println(pred)
+        }
+
+    }
+
     private fun trainData(td : List<FloatBuffer>, tb: List<FloatBuffer>){
         // Run training for a few steps.
         // Run training for a few steps.
@@ -117,25 +150,14 @@ class MainActivity : AppCompatActivity() {
         }
 
     }
+
     fun assignStatus(hr: Int, day: Int, centerHr: Int, centerDay: Int, radius: Int): Int {
         val distanceFromCenter = kotlin.math.sqrt(((hr - centerHr) * (hr - centerHr) + (day - centerDay) * (day - centerDay)).toDouble())
         return if (distanceFromCenter <= radius) 1 else 0
     }
 
-    /*private suspend fun infer(){
-        val inputs: MutableMap<String, Any> = HashMap()
-        inputs["x"] = testImages.rewind()
-        val outputs: MutableMap<String, Any> = HashMap()
-        outputs["output"] = output
-        tflite.runSignature(inputs, outputs, "infer")
-        output.rewind()
-
-    }*/
 
     private fun buildTrainData(){
-
-
-
 
        // Assuming hrValues and dayValues are your training data (features)
         for (i in 0 until NUM_BATCHES) {
@@ -157,8 +179,6 @@ class MainActivity : AppCompatActivity() {
             trainFeatureBatches.add(trainFeatures.rewind() as FloatBuffer)
             trainLabelBatches.add(trainLabels.rewind() as FloatBuffer)
 
-
-
         }
 
         printTrainingData(trainFeatureBatches)
@@ -175,89 +195,6 @@ class MainActivity : AppCompatActivity() {
             println(featureValues.joinToString(", "))
         }
     }
-    /*
-    private suspend fun onDeviceLearning() {
-        val hmin=8
-        val hmax=24
-        val daymin=1
-        val daymax=7
-
-
-        val sample_size = 400
-           val NUM_EPOCHS = 100
-            val BATCH_SIZE = 8
-            val NUM_FEATURES = 2  // Hour and Day
-            val NUM_TRAININGS = 400 // Adjust if needed
-            val NUM_BATCHES = NUM_TRAININGS / BATCH_SIZE //50
-        val traindataBatches: MutableList<FloatBuffer> = ArrayList(NUM_BATCHES)
-        val trainLabelBatches: MutableList<FloatBuffer> = ArrayList(NUM_BATCHES)
-
-
-
-
-        val hr = IntArray(sample_size) { Random.nextInt(hmin, hmax) }
-        val day = IntArray(sample_size) { Random.nextInt(daymin, daymax + 1) }
-
-        //loop for 50 times
-        for (i in 0 until NUM_BATCHES) {
-            val trainData = FloatBuffer.allocate(BATCH_SIZE * NUM_FEATURES) //each times alloc 8*2
-            val trainLabels = FloatBuffer.allocate(BATCH_SIZE) // one label alloc 8
-
-
-            val hour = IntArray(sample_size) { Random.nextInt(hmin, hmax) }
-            val day = IntArray(sample_size) { Random.nextInt(daymin, daymax + 1) }
-
-            //val status = assignStatus(hour, day, 20, 5, 3) // Call the assignStatus function
-
-            //traindataBatches.add(hour)
-
-            //trainLabels.put(status.toFloat())
-        }
-
-
-        /*
-            val trainDataBatches = ArrayList<FloatBuffer>(NUM_BATCHES)
-            val trainLabelBatches = ArrayList<FloatBuffer>(NUM_BATCHES)
-
-            // Prepare training batches.
-            for (i in 0 until NUM_BATCHES) {
-                val trainData = FloatBuffer.allocate(BATCH_SIZE * NUM_FEATURES)
-                val trainLabels =
-                    FloatBuffer.allocate(BATCH_SIZE * 10) // Replace 10 with the number of output classes
-
-                // Fill the data values... (You'll need to replace this)
-                trainDataBatches.add(trainData)
-                trainLabelBatches.add(trainLabels)
-            }
-
-            // Run training for a few steps.
-            val losses = FloatArray(NUM_EPOCHS)
-            for (epoch in 0 until NUM_EPOCHS) {
-                for (batchIdx in 0 until NUM_BATCHES) {
-                    val inputs = HashMap<String, Any>()
-                    inputs["x"] = trainDataBatches[batchIdx]
-                    inputs["y"] = trainLabelBatches[batchIdx]
-
-                    val outputs = HashMap<String, Any>()
-                    val loss = FloatBuffer.allocate(1)
-                    outputs["loss"] = loss
-
-                    tflite.runSignature(inputs, outputs, "train")
-
-                    // Record the last loss.
-                    if (batchIdx == NUM_BATCHES - 1) losses[epoch] = loss.get(0)
-                }
-
-                // Print the loss output for every 10 epochs.
-                if ((epoch + 1) % 10 == 0) {
-                    println("Finished ${epoch + 1} epochs, current loss: ${loss.get(0)}")
-                }
-            }
-*/
-            // ...
-        }
-*/
-
 
 
     private fun createInterpreter(): Interpreter? {
@@ -290,4 +227,89 @@ class MainActivity : AppCompatActivity() {
         val declaredLength = fileDescriptor.declaredLength
         return fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength)
     }
+
+    /*
+private suspend fun onDeviceLearning() {
+    val hmin=8
+    val hmax=24
+    val daymin=1
+    val daymax=7
+
+
+    val sample_size = 400
+       val NUM_EPOCHS = 100
+        val BATCH_SIZE = 8
+        val NUM_FEATURES = 2  // Hour and Day
+        val NUM_TRAININGS = 400 // Adjust if needed
+        val NUM_BATCHES = NUM_TRAININGS / BATCH_SIZE //50
+    val traindataBatches: MutableList<FloatBuffer> = ArrayList(NUM_BATCHES)
+    val trainLabelBatches: MutableList<FloatBuffer> = ArrayList(NUM_BATCHES)
+
+
+
+
+    val hr = IntArray(sample_size) { Random.nextInt(hmin, hmax) }
+    val day = IntArray(sample_size) { Random.nextInt(daymin, daymax + 1) }
+
+    //loop for 50 times
+    for (i in 0 until NUM_BATCHES) {
+        val trainData = FloatBuffer.allocate(BATCH_SIZE * NUM_FEATURES) //each times alloc 8*2
+        val trainLabels = FloatBuffer.allocate(BATCH_SIZE) // one label alloc 8
+
+
+        val hour = IntArray(sample_size) { Random.nextInt(hmin, hmax) }
+        val day = IntArray(sample_size) { Random.nextInt(daymin, daymax + 1) }
+
+        //val status = assignStatus(hour, day, 20, 5, 3) // Call the assignStatus function
+
+        //traindataBatches.add(hour)
+
+        //trainLabels.put(status.toFloat())
+    }
+
+
+    /*
+        val trainDataBatches = ArrayList<FloatBuffer>(NUM_BATCHES)
+        val trainLabelBatches = ArrayList<FloatBuffer>(NUM_BATCHES)
+
+        // Prepare training batches.
+        for (i in 0 until NUM_BATCHES) {
+            val trainData = FloatBuffer.allocate(BATCH_SIZE * NUM_FEATURES)
+            val trainLabels =
+                FloatBuffer.allocate(BATCH_SIZE * 10) // Replace 10 with the number of output classes
+
+            // Fill the data values... (You'll need to replace this)
+            trainDataBatches.add(trainData)
+            trainLabelBatches.add(trainLabels)
+        }
+
+        // Run training for a few steps.
+        val losses = FloatArray(NUM_EPOCHS)
+        for (epoch in 0 until NUM_EPOCHS) {
+            for (batchIdx in 0 until NUM_BATCHES) {
+                val inputs = HashMap<String, Any>()
+                inputs["x"] = trainDataBatches[batchIdx]
+                inputs["y"] = trainLabelBatches[batchIdx]
+
+                val outputs = HashMap<String, Any>()
+                val loss = FloatBuffer.allocate(1)
+                outputs["loss"] = loss
+
+                tflite.runSignature(inputs, outputs, "train")
+
+                // Record the last loss.
+                if (batchIdx == NUM_BATCHES - 1) losses[epoch] = loss.get(0)
+            }
+
+            // Print the loss output for every 10 epochs.
+            if ((epoch + 1) % 10 == 0) {
+                println("Finished ${epoch + 1} epochs, current loss: ${loss.get(0)}")
+            }
+        }
+*/
+        // ...
+    }
+*/
+
+
 }
